@@ -1,0 +1,208 @@
+syntax = "proto3";
+package services.v1.employee;
+option go_package = "github.com/scrynaxx/tr-core/contracts/generated/services/v1/employee;employee";
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+service EmployeeService {
+  rpc GetMe(google.protobuf.Empty) returns (Employee) {
+    option (google.api.http) = {
+      get: "/v1/employee/me"
+    };
+  }
+
+  rpc CreateEmployee(CreateEmployeeRequest) returns (Employee) {
+    option (google.api.http) = {
+      post: "/v1/employee/employees",
+      body: "*"
+    };
+  }
+
+  rpc GetEmployee(GetEmployeeRequest) returns (Employee) {
+    option (google.api.http) = {
+      get: "/v1/employee/employees/{employee_id}"
+    };
+  }
+
+  rpc ListEmployees(google.protobuf.Empty) returns (ListEmployeesResponse) {
+    option (google.api.http) = {
+      get: "/v1/employee/employees"
+    };
+  }
+
+  rpc UpdateEmployee(UpdateEmployeeRequest) returns (Employee) {
+    option (google.api.http) = {
+      put: "/v1/employee/employees/{employee_id}",
+      body: "*"
+    };
+  }
+
+  rpc ArchiveEmployee(ArchiveEmployeeRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/employee/employees/{employee_id}"
+    };
+  }
+
+  rpc CreateCredentials(CreateCredentialsRequest) returns (Credentials) {
+    option (google.api.http) = {
+      post: "/v1/employee/employees/{employee_id}/credentials",
+      body: "*"
+    };
+  }
+
+  rpc FindCredentials(FindCredentialsRequest) returns (Credentials) {
+    option (google.api.http) = {
+      get: "/v1/employee/employees/{employee_id}/credentials"
+    };
+  }
+
+  rpc UpdateCredentials(UpdateCredentialsRequest) returns (Credentials) {
+    option (google.api.http) = {
+      put: "/v1/employee/employees/{employee_id}/credentials",
+      body: "*"
+    };
+  }
+
+  rpc DeleteCredentials(DeleteCredentialsRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/employee/employees/{employee_id}/credentials"
+    };
+  }
+
+  rpc CreatePassport(CreatePassportRequest) returns (Passport) {
+    option (google.api.http) = {
+      post: "/v1/employee/employees/{employee_id}/passport",
+      body: "*"
+    };
+  }
+
+  rpc FindPassport(FindPassportRequest) returns (Passport) {
+    option (google.api.http) = {
+      get: "/v1/employee/employees/{employee_id}/passport"
+    };
+  }
+
+  rpc UpdatePassport(UpdatePassportRequest) returns (Passport) {
+    option (google.api.http) = {
+      put: "/v1/employee/employees/{employee_id}/passport",
+      body: "*"
+    };
+  }
+
+  rpc DeletePassport(DeletePassportRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/employee/employees/{employee_id}/passport"
+    };
+  }
+}
+
+message Employee {
+  string id = 1;
+  string type = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string patronymic = 5;
+  string phone = 6;
+  google.protobuf.Timestamp birth_date = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+  optional google.protobuf.Timestamp archived_at = 10;
+}
+
+message Passport {
+  string series = 1 [(buf.validate.field).string = {min_len: 1, max_len: 16}];
+  string number = 2 [(buf.validate.field).string = {min_len: 1, max_len: 32}];
+  string issued_by = 3 [(buf.validate.field).string = {min_len: 1, max_len: 1000}];
+  google.protobuf.Timestamp issued_at = 4;
+  string department_code = 5 [(buf.validate.field).string = {min_len: 1, max_len: 16}];
+}
+
+message Credentials {
+  string email = 1;
+}
+
+message CreateEmployeeRequest {
+  string type = 1 [(buf.validate.field).string = {in: ["manager", "foreman", "loader", "assembler"]}];
+  string first_name = 2 [(buf.validate.field).required = true];
+  string last_name = 3 [(buf.validate.field).required = true];
+  string patronymic = 4 [(buf.validate.field).required = true];
+  string phone = 5 [(buf.validate.field).required = true];
+  google.protobuf.Timestamp birth_date = 6 [(buf.validate.field).required = true];
+  optional Passport passport = 7;
+  optional CreateCredentials credentials = 8;
+
+  message CreateCredentials {
+    string email = 1 [(buf.validate.field).string = {email: true}];
+    string password = 2 [(buf.validate.field).string = {min_len: 8}];
+  }
+}
+
+message GetEmployeeRequest {
+  string employee_id = 1 [(buf.validate.field).string = {uuid: true}];
+}
+
+message ListEmployeesResponse {
+  repeated Employee employees = 1;
+}
+
+message UpdateEmployeeRequest {
+  string employee_id = 1 [(buf.validate.field).string = {uuid: true}];
+  string type = 2 [(buf.validate.field).string = {in: ["manager", "foreman", "loader", "assembler"]}];
+  string first_name = 3 [(buf.validate.field).required = true];
+  string last_name = 4 [(buf.validate.field).required = true];
+  string patronymic = 5 [(buf.validate.field).required = true];
+  string phone = 6 [(buf.validate.field).required = true];
+  google.protobuf.Timestamp birth_date = 7 [(buf.validate.field).required = true];
+}
+
+message ArchiveEmployeeRequest {
+  string employee_id = 1 [(buf.validate.field).string = {uuid: true}];
+}
+
+message CreateCredentialsRequest {
+  string employee_id = 1 [(buf.validate.field).string = {uuid: true}];
+  string email = 2 [(buf.validate.field).string = {email: true}];
+  string password = 3 [(buf.validate.field).string = {min_len: 8}];
+}
+
+message FindCredentialsRequest {
+  string employee_id = 1 [(buf.validate.field).string = {uuid: true}];
+}
+
+message UpdateCredentialsRequest {
+  string employee_id = 1 [(buf.validate.field).string = {uuid: true}];
+  string email = 2 [(buf.validate.field).string = {email: true}];
+}
+
+message DeleteCredentialsRequest {
+  string employee_id = 1 [(buf.validate.field).string = {uuid: true}];
+}
+
+message CreatePassportRequest {
+  string employee_id = 1 [(buf.validate.field).string = {uuid: true}];
+  string series = 2 [(buf.validate.field).string = {min_len: 1, max_len: 16}];
+  string number = 3 [(buf.validate.field).string = {min_len: 1, max_len: 32}];
+  string issued_by = 4 [(buf.validate.field).string = {min_len: 1, max_len: 1000}];
+  google.protobuf.Timestamp issued_at = 5;
+  string department_code = 6 [(buf.validate.field).string = {min_len: 1, max_len: 16}];
+}
+
+message FindPassportRequest {
+  string employee_id = 1 [(buf.validate.field).string = {uuid: true}];
+}
+
+message UpdatePassportRequest {
+  string employee_id = 1 [(buf.validate.field).string = {uuid: true}];
+  string series = 2 [(buf.validate.field).string = {min_len: 1, max_len: 16}];
+  string number = 3 [(buf.validate.field).string = {min_len: 1, max_len: 32}];
+  string issued_by = 4 [(buf.validate.field).string = {min_len: 1, max_len: 1000}];
+  google.protobuf.Timestamp issued_at = 5;
+  string department_code = 6 [(buf.validate.field).string = {min_len: 1, max_len: 16}];
+}
+
+message DeletePassportRequest {
+  string employee_id = 1 [(buf.validate.field).string = {uuid: true}];
+}

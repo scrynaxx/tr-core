@@ -1,0 +1,195 @@
+x-app-environment: &app-environment
+  APP_ENVIRONMENT: development
+  PG_USER: postgres
+  PG_PASSWORD: postgres
+  PG_DATABASE: local
+  PG_HOST: postgres
+  PG_PORT: "5432"
+  PG_SSL_MODE: disable
+  RABBIT_USER: guest
+  RABBIT_PASSWORD: guest
+  RABBIT_ADDRESS: rabbitmq:5672
+  RABBIT_VHOST: /
+  REDIS_ADDRESS: redis:6379
+  REDIS_PASSWORD: redis
+  SMTP_HOST: smtp.example.test
+  SMTP_PORT: "465"
+  SMTP_USERNAME: local
+  SMTP_PASSWORD: local
+  SMTP_SENDER: no-reply@example.test
+  SMTP_NAME: Local
+  JWT_ISSUER: auth
+  JWT_SECRET: local-development-secret-change-before-production
+  OTEL_EXPORTER_OTLP_ENDPOINT: otel-collector:4317
+  OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+  TZ: UTC
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: local
+      PGTZ: UTC
+      TZ: UTC
+    ports:
+      - "5432:5432"
+    volumes:
+      - tr-core-postgres-data:/var/lib/postgresql/data
+    networks:
+      - tr-core-internal-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      TZ: UTC
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - tr-core-rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - tr-core-internal-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:8-alpine
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "redis"]
+    environment:
+      TZ: UTC
+    ports:
+      - "6379:6379"
+    volumes:
+      - tr-core-redis-data:/data
+    networks:
+      - tr-core-internal-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.157.0
+    command: [ "--config=/etc/otelcol-contrib/config.yaml" ]
+    environment:
+      TZ: UTC
+    volumes:
+      - ./otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "4317:4317" # OTLP/gRPC
+      - "4318:4318" # OTLP/HTTP
+    networks:
+      - tr-core-internal-network
+
+  auth:
+    build:
+      context: .
+      dockerfile: services/auth/deployments/Dockerfile
+    environment:
+      <<: *app-environment
+    ports:
+      - "8100:8000"
+      - "8101:8001"
+    networks:
+      - tr-core-internal-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    stop_grace_period: 4m
+
+  notification:
+    build:
+      context: .
+      dockerfile: services/notification/deployments/Dockerfile
+    environment:
+      <<: *app-environment
+    ports:
+      - "8200:8000"
+      - "8201:8001"
+    networks:
+      - tr-core-internal-network
+    stop_grace_period: 2m
+
+  employee:
+    build:
+      context: .
+      dockerfile: services/employee/deployments/Dockerfile
+    environment:
+      <<: *app-environment
+    ports:
+      - "8300:8000"
+      - "8301:8001"
+    networks:
+      - tr-core-internal-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth:
+        condition: service_started
+    stop_grace_period: 2m
+
+  customer:
+    build:
+      context: .
+      dockerfile: services/customer/deployments/Dockerfile
+    environment:
+      <<: *app-environment
+    ports:
+      - "8400:8000"
+      - "8401:8001"
+    networks:
+      - tr-core-internal-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    stop_grace_period: 2m
+
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/deployments/Dockerfile
+    environment:
+      <<: *app-environment
+    ports:
+      - "8000:8000"
+    networks:
+      - tr-core-internal-network
+    depends_on:
+      auth:
+        condition: service_started
+      employee:
+        condition: service_started
+      customer:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    stop_grace_period: 2m
+
+networks:
+  tr-core-internal-network:
+    external: true
+
+volumes:
+  tr-core-postgres-data:
+    external: true
+  tr-core-rabbitmq-data:
+    external: true
+  tr-core-redis-data:
+    external: true

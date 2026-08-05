@@ -1,0 +1,19 @@
+syntax = "proto3";
+package services.inner.employee;
+option go_package = "github.com/scrynaxx/tr-core/contracts/generated/services/inner/employee;employee";
+
+import "buf/validate/validate.proto";
+
+service EmployeeService {
+  rpc FindCredentials(FindCredentialsRequest) returns (Credentials);
+}
+
+message Credentials {
+  string employee_id = 1;
+  string email = 2;
+  string password_hash = 3;
+}
+
+message FindCredentialsRequest {
+  string email = 1;
+}

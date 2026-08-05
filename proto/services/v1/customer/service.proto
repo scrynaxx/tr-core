@@ -1,0 +1,77 @@
+syntax = "proto3";
+package services.v1.customer;
+option go_package = "github.com/scrynaxx/tr-core/contracts/generated/services/v1/customer;customer";
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+service CustomerService {
+  rpc CreateCustomer(CreateCustomerRequest) returns (Customer) {
+    option (google.api.http) = {
+      post: "/v1/customer/customers",
+      body: "*"
+    };
+  }
+
+  rpc GetCustomer(GetCustomerRequest) returns (Customer) {
+    option (google.api.http) = {
+      get: "/v1/customer/customers/{customer_id}"
+    };
+  }
+
+  rpc ListCustomers(google.protobuf.Empty) returns (ListCustomersResponse) {
+    option (google.api.http) = {
+      get: "/v1/customer/customers"
+    };
+  }
+
+  rpc UpdateCustomer(UpdateCustomerRequest) returns (Customer) {
+    option (google.api.http) = {
+      put: "/v1/customer/customers/{customer_id}",
+      body: "*"
+    };
+  }
+
+  rpc ArchiveCustomer(ArchiveCustomerRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/customer/customers/{customer_id}"
+    };
+  }
+}
+
+message Customer {
+  string id = 1;
+  string name = 2;
+  string phone = 3;
+  string email = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+  optional google.protobuf.Timestamp archived_at = 7;
+}
+
+message CreateCustomerRequest {
+  string name = 1 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  string phone = 2 [(buf.validate.field).string = {min_len: 1, max_len: 32}];
+  string email = 3 [(buf.validate.field).string = {email: true, max_len: 320}];
+}
+
+message GetCustomerRequest {
+  string customer_id = 1 [(buf.validate.field).string = {uuid: true}];
+}
+
+message ListCustomersResponse {
+  repeated Customer customers = 1;
+}
+
+message UpdateCustomerRequest {
+  string customer_id = 1 [(buf.validate.field).string = {uuid: true}];
+  string name = 2 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  string phone = 3 [(buf.validate.field).string = {min_len: 1, max_len: 32}];
+  string email = 4 [(buf.validate.field).string = {email: true, max_len: 320}];
+}
+
+message ArchiveCustomerRequest {
+  string customer_id = 1 [(buf.validate.field).string = {uuid: true}];
+}

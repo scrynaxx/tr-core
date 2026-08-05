@@ -1,0 +1,15 @@
+version: v2
+
+modules:
+  - path: .
+
+breaking:
+  use:
+    - FILE
+
+lint:
+  use:
+    - DEFAULT
+  except:
+    - PACKAGE_VERSION_SUFFIX
+    - ENUM_NO_ALLOW_ALIAS

@@ -1,0 +1,12 @@
+syntax = "proto3";
+package services.inner.order;
+option go_package = "github.com/scrynaxx/tr-core/generated/services/inner/order;order";
+
+import "buf/validate/validate.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "google/api/annotations.proto";
+
+service OrderService {
+
+}

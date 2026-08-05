@@ -1,0 +1,24 @@
+syntax = "proto3";
+package services.v1.order;
+option go_package = "github.com/scrynaxx/tr-core/generated/services/v1/order;v1order";
+
+import "buf/validate/validate.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "google/api/annotations.proto";
+
+service OrderService {
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse) {
+    option (google.api.http) = {
+      get: "/v1/order/{order_id}"
+    };
+  }
+}
+
+message GetOrderRequest {
+  string order_id = 1 [(buf.validate.field).string = {uuid: true}];
+}
+
+message GetOrderResponse {
+
+}

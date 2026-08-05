@@ -1,0 +1,28 @@
+version: v2
+clean: true
+inputs:
+  - directory: .
+    exclude_paths:
+      - google
+      - buf
+plugins:
+  - local: protoc-gen-go
+    out: ../contracts/generated
+    opt:
+      - paths=source_relative
+
+  - local: protoc-gen-go-grpc
+    out: ../contracts/generated
+    opt:
+      - paths=source_relative,require_unimplemented_servers=false
+
+  - local: protoc-gen-grpc-gateway
+    out: ../contracts/generated
+    opt:
+      - paths=source_relative
+
+  - local: protoc-gen-openapiv2
+    out: ../contracts/generated
+    opt:
+      - openapi_naming_strategy=simple
+      - simple_operation_ids=true
